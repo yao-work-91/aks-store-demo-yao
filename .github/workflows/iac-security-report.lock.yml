@@ -23,7 +23,7 @@
 #
 # Weekly IaC security scan of Terraform, Bicep, Kubernetes manifests, Helm charts, and Dockerfiles. Reports findings grouped by IAM, Network Security, Data Protection, Container Security, and Logging as a GitHub issue.
 #
-# gh-aw-metadata: {"schema_version":"v2","frontmatter_hash":"e6e66cb7bc4b1d177283cc16bbc16096ab339462d5d77f78992296bbe1541d2a","compiler_version":"v0.57.2","strict":true}
+# gh-aw-metadata: {"schema_version":"v2","frontmatter_hash":"cedb167be94a98037a4edfa6618d9e5c10d5295a5654fe621b04bad751141510","compiler_version":"v0.57.2","strict":true}
 
 name: "Weekly IaC Security Report"
 "on":
