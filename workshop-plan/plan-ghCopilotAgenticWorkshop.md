@@ -81,7 +81,7 @@ Polyglot microservices demo: JavaScript (Fastify), Go (Gin), Rust (Actix), Pytho
 - All PRs must include tests for new/changed code
 ```
 
-**2. `.github/dependabot.yml`** — daily scanning for npm/pip/gomod/cargo/actions — **all with `assignees: ["copilot"]`**
+**2. `.github/dependabot.yml`** — daily scanning for npm/pip/gomod/cargo/actions
 
 ```yaml
 version: 2
@@ -90,8 +90,6 @@ updates:
     directory: "/src/order-service"
     schedule:
       interval: "daily"
-    assignees:
-      - "copilot"
     labels:
       - "dependencies"
       - "security"
@@ -100,38 +98,45 @@ updates:
     directory: "/src/store-front"
     schedule:
       interval: "daily"
-    assignees:
-      - "copilot"
+    labels:
+      - "dependencies"
+      - "automated"
   - package-ecosystem: "npm"
     directory: "/src/store-admin"
     schedule:
       interval: "daily"
-    assignees:
-      - "copilot"
+    labels:
+      - "dependencies"
+      - "automated"
   - package-ecosystem: "pip"
     directory: "/src/ai-service"
     schedule:
       interval: "daily"
-    assignees:
-      - "copilot"
+    labels:
+      - "dependencies"
+      - "automated"
   - package-ecosystem: "gomod"
     directory: "/src/makeline-service"
     schedule:
       interval: "daily"
-    assignees:
-      - "copilot"
+    labels:
+      - "dependencies"
+      - "automated"
   - package-ecosystem: "cargo"
     directory: "/src/product-service"
     schedule:
       interval: "daily"
-    assignees:
-      - "copilot"
+    labels:
+      - "dependencies"
+      - "automated"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
-    assignees:
-      - "copilot"
+    labels:
+      - "dependencies"
+      - "ci"
+      - "automated"
 ```
 
 **3. `.github/workflows/codeql.yml`** — CodeQL for JS, Python, Go
@@ -167,7 +172,7 @@ jobs:
 
 Fall behind? → Merge `checkpoint/module-2` into `main`.
 
-**Takeaway**: `assignees: copilot` in Dependabot means dependency PRs go straight to the Coding Agent. Three files set up the full DevSecOps foundation.
+**Takeaway**: Dependabot scans 7 ecosystems daily. Combined with the security-audit workflow (Module 4), this creates a comprehensive automated dependency management pipeline.
 
 ### Module 3: DevSecOps Showcase (10 min) — facilitator's pre-baked fork
 
@@ -195,198 +200,30 @@ Create **`.github/workflows/security-audit-autofix.yml`** with 3 parallel jobs:
 | `audit-python`        | `pip-audit` on ai-service      | Creates security issue → assigns to `copilot` |
 | `test-coverage-check` | Finds services with zero tests | Creates quality issue → assigns to `copilot`  |
 
+The full workflow YAML is in **handout-module-4.md** and on the **`checkpoint/module-4`** branch. Key design:
+
+1. **Scan** — each job audits dependencies or checks test coverage
+2. **Create issue** — via `actions/github-script` using `GITHUB_TOKEN`
+3. **Assign Copilot** — via `gh api` POST to `/issues/{number}/assignees` using `PAT_TOKEN` (your personal token carries Copilot entitlement)
+
 ```yaml
-name: "Security Audit → Auto-Create Issues → Assign to Copilot"
-
-on:
-  schedule:
-    - cron: "0 8 * * 1-5" # Weekdays at 8am UTC
-  workflow_dispatch: # Manual trigger for demo
-
-permissions:
-  contents: read
-  issues: write
-
-jobs:
-  audit-node:
-    name: Audit Node.js Services
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
-      - name: Audit order-service
-        id: audit
-        run: |
-          cd src/order-service
-          npm install --package-lock-only 2>/dev/null
-          set +e
-          AUDIT_OUTPUT=$(npm audit --json 2>/dev/null)
-          set -e
-          HIGH=$(echo "$AUDIT_OUTPUT" | jq '.metadata.vulnerabilities.high // 0')
-          CRITICAL=$(echo "$AUDIT_OUTPUT" | jq '.metadata.vulnerabilities.critical // 0')
-          TOTAL=$((HIGH + CRITICAL))
-          echo "total=$TOTAL" >> "$GITHUB_OUTPUT"
-          echo "$AUDIT_OUTPUT" | jq -r '[.vulnerabilities | to_entries[] | select(.value.severity == "high" or .value.severity == "critical") | "- **\(.key)** (\(.value.severity)): \(.value.via[0].title // "unknown")"] | join("\n")' > findings.md
-
-      - name: Create issue and assign to Copilot
-        if: steps.audit.outputs.total != '0'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            const findings = fs.readFileSync('findings.md', 'utf8');
-            const existing = await github.rest.issues.listForRepo({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              labels: 'security,automated,order-service',
-              state: 'open'
-            });
-            if (existing.data.length > 0) {
-              console.log('Issue already exists, skipping');
-              return;
-            }
-            await github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: '[Security] Fix npm vulnerabilities in order-service',
-              body: [
-                '## Automated Security Audit Finding',
-                '',
-                '**Service:** order-service (`src/order-service/`)',
-                '**Scanner:** npm audit',
-                `**Found:** ${process.env.TOTAL || 'multiple'} high/critical vulnerabilities`,
-                '',
-                '### Vulnerabilities',
-                findings,
-                '',
-                '### Remediation',
-                'Update affected dependencies in `src/order-service/package.json` to patched versions.',
-                '- Run `npm audit fix` or manually update versions',
-                '- Ensure all existing tests still pass',
-                '- Pin versions to exact (remove caret ranges) where possible',
-                '',
-                '> This issue was auto-generated by the security audit workflow.'
-              ].join('\n'),
-              labels: ['security', 'automated', 'order-service'],
-              assignees: ['copilot']
-            });
-
-  audit-python:
-    name: Audit Python Services
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Audit ai-service
-        id: audit
-        run: |
-          pip install pip-audit 2>/dev/null
-          set +e
-          AUDIT_OUTPUT=$(pip-audit -r src/ai-service/requirements.txt --format json 2>/dev/null)
-          set -e
-          VULN_COUNT=$(echo "$AUDIT_OUTPUT" | jq '[.dependencies[] | select(.vulns | length > 0)] | length')
-          echo "count=${VULN_COUNT:-0}" >> "$GITHUB_OUTPUT"
-          echo "$AUDIT_OUTPUT" | jq -r '[.dependencies[] | select(.vulns | length > 0) | "- **\(.name)** \(.version): \(.vulns[0].id) — \(.vulns[0].description // "see advisory")"] | join("\n")' > findings.md
-
-      - name: Create issue and assign to Copilot
-        if: steps.audit.outputs.count != '0'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            const findings = fs.readFileSync('findings.md', 'utf8');
-            const existing = await github.rest.issues.listForRepo({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              labels: 'security,automated,ai-service',
-              state: 'open'
-            });
-            if (existing.data.length > 0) return;
-            await github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: '[Security] Fix Python dependency vulnerabilities in ai-service',
-              body: [
-                '## Automated Security Audit Finding\n',
-                '**Service:** ai-service (`src/ai-service/`)',
-                '**Scanner:** pip-audit\n',
-                '### Vulnerabilities',
-                findings,
-                '\n### Remediation',
-                'Update affected packages in `src/ai-service/requirements.txt` to patched versions.',
-                'Verify the FastAPI app starts and existing functionality works.\n',
-                '> Auto-generated by security audit workflow.'
-              ].join('\n'),
-              labels: ['security', 'automated', 'ai-service'],
-              assignees: ['copilot']
-            });
-
-  test-coverage-check:
-    name: Check Test Coverage Gaps
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Identify untested services
-        id: coverage
-        run: |
-          GAPS=""
-          if ! find src/makeline-service -name "*_test.go" | grep -q .; then
-            GAPS="${GAPS}- **makeline-service** (Go): Zero test files found\n"
-          fi
-          if ! find src/ai-service -name "test_*" -o -name "*_test.py" | grep -q .; then
-            GAPS="${GAPS}- **ai-service** (Python): Zero test files found\n"
-          fi
-          if ! grep -r "#\[test\]" src/product-service/src/ 2>/dev/null | grep -q .; then
-            GAPS="${GAPS}- **product-service** (Rust): No unit test modules found\n"
-          fi
-          if [ -n "$GAPS" ]; then
-            echo "has_gaps=true" >> "$GITHUB_OUTPUT"
-            printf "%b" "$GAPS" > gaps.md
-          else
-            echo "has_gaps=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Create issue for test gaps
-        if: steps.coverage.outputs.has_gaps == 'true'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            const gaps = fs.readFileSync('gaps.md', 'utf8');
-            const existing = await github.rest.issues.listForRepo({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              labels: 'testing,automated',
-              state: 'open'
-            });
-            if (existing.data.length > 0) return;
-            await github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: '[Quality] Add unit tests for untested services',
-              body: [
-                '## Automated Test Coverage Finding\n',
-                '### Services Missing Unit Tests',
-                gaps,
-                '\n### Requirements',
-                '- Go services: use `testing` package with table-driven tests',
-                '- Python services: use `pytest` with fixtures, mock external APIs',
-                '- Rust services: use `#[cfg(test)]` module with unit tests\n',
-                '> Auto-generated by test coverage check workflow.'
-              ].join('\n'),
-              labels: ['testing', 'automated'],
-              assignees: ['copilot']
-            });
+# The assignment step uses PAT_TOKEN (not GITHUB_TOKEN)
+- name: Assign Copilot to issue
+  env:
+    GH_TOKEN: ${{ secrets.PAT_TOKEN }}
+  run: |
+    for ASSIGNEE in "copilot-swe-agent[bot]" "copilot-swe-agent" "Copilot" "copilot"; do
+      gh api "repos/$REPO/issues/$ISSUE_NUMBER/assignees" \
+        --method POST --input - <<< "{\"assignees\":[\"$ASSIGNEE\"]}"
+      CURRENT=$(gh api "repos/$REPO/issues/$ISSUE_NUMBER" --jq '[.assignees[].login] | join(",")')
+      if echo "$CURRENT" | grep -qi "copilot"; then
+        echo "✅ Assigned to Copilot"
+        break
+      fi
+    done
 ```
+
+> **Note**: The standard Issues API (`issues.create`) rejects `copilot` as an assignee. The dedicated `POST /issues/{number}/assignees` endpoint with a PAT carrying your Copilot entitlement is required.
 
 **Live flow**: paste YAML → commit → Actions tab → "Run workflow" → watch issues appear → "Copilot is working" → PRs generated.
 
