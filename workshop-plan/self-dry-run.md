@@ -12,6 +12,7 @@ Go to `https://github.com/sohamda/aks-store-demo/settings`:
    - Permissions (all Read & Write): **Actions**, **Contents**, **Issues**, **Pull requests**
    - Generate → copy token
    - Repo → Settings → Secrets → Actions → New secret → Name: `PAT_TOKEN` → paste token
+   - Repo → Settings → Secrets → Actions → New secret → Name: `COPILOT_GITHUB_TOKEN` → paste the same token (is required for module 7, GH Agentic Workflow)
 5. Verify Copilot Coding Agent is available: go to any issue → Assignees dropdown → "Copilot" should appear
 
 ### Step 2: Test Module 2 — Merge the checkpoint
@@ -69,13 +70,13 @@ After 15-30 min:
 3. Title: `[Security] IaC Security Scan`
 4. Body:
    ```
-   @copilot Use the IaCSecurityAgent to scan this repository's infrastructure code and generate a security report.
+   Use the IaCSecurityAgent to scan this repository's infrastructure code and generate a security report.
 
    Scan: infra/terraform/, infra/bicep/, kustomize/, charts/, src/*/Dockerfile, aks-store-*.yaml
    ```
 5. Set **Assignees** → `copilot`
-6. Submit → verify Copilot uses the IaCSecurityAgent to generate a security findings report
-7. Check the PR — it should contain a structured security report with findings across Terraform, Bicep, K8s, Helm, and Dockerfiles
+6. Submit → verify Copilot (Agents > Sessions > Active Session) uses the IaCSecurityAgent to generate a security findings report
+7. Check the PR — it should contain a structured security report and updates with findings across Terraform, Bicep, K8s, Helm, and Dockerfiles
 
 ### Step 8: Test Module 7 — GitHub Agentic Workflows (gh-aw)
 
@@ -91,7 +92,7 @@ After 15-30 min:
 
 **Option B — github.com Copilot Chat (no CLI needed):**
 
-1. Open Copilot Chat on your fork
+1. Open Agents tab on your fork
 2. Enter the prompt from `handout-module-7-gh-aw.md` (Option A section)
 3. Copilot will create the workflow files
 4. Trigger from Actions tab
