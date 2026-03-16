@@ -8,7 +8,7 @@
 | **Platform**     | github.com only (no IDE)                                                        |
 | **Repo**         | aks-store-demo (8 polyglot microservices, zero Copilot/DevSecOps config)        |
 | **Prerequisite** | GitHub account with Copilot Pro/Pro+/Business/Enterprise + Coding Agent enabled |
-| **Setup**        | Fork the repo, enable GitHub Actions, create `PAT_TOKEN` repo secret            |
+| **Setup**        | Fork the repo (all branches), enable GitHub Actions, create `PAT_TOKEN` repo secret            |
 
 ## Core Workshop Modules
 
