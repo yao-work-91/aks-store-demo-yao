@@ -53,7 +53,7 @@ By the end, your fork will have a fully autonomous DevSecOps pipeline:
 ### Fork the Repository
 
 1. Go to the source repo on GitHub
-2. Click **Fork** → ensure **"Copy all branches"** is checked → **Create fork**
+2. Click **Fork** → ensure **"Copy only main branch"** is NOT checked → **Create fork**
 
 ### Enable GitHub Features
 
@@ -84,7 +84,7 @@ This is required for assigning Copilot to issues via workflows.
 
 ### Verify Copilot Coding Agent
 
-Go to any issue on your fork → click the **Assignees** dropdown → **"Copilot"** should appear as an option.
+Go to the Issues tab on your fork → click the **Assignees** dropdown → **"Copilot"** should appear as an option.
 
 > **If Copilot doesn't appear**: Verify your plan is Copilot Pro, Pro+, Business, or Enterprise and that Coding Agent is enabled in your account/org settings.
 
@@ -316,8 +316,7 @@ After 15–30 minutes from Module 2 setup (check back later if in a live worksho
 
 1. **Security tab → Dependabot alerts** — vulnerability findings across npm, pip, Go, Cargo
 2. **Security tab → Code scanning** — CodeQL SAST results for JS, Python, Go
-3. **Pull requests tab** — Dependabot may have created dependency bump PRs
-4. Click a CodeQL alert → look for the **"Copilot Autofix"** button — this is AI-powered auto-remediation
+3. Click a CodeQL alert → look for the **"Copilot Autofix"** button — this is AI-powered auto-remediation
 
 ### Key takeaway
 
@@ -416,9 +415,9 @@ The order-service (`src/order-service/`) accepts orders via POST /order without 
 - `src/order-service/test/` — add validation tests
 ```
 
-4. **Labels**: `enhancement`
-5. **Assignees**: `copilot`
-6. Submit → verify **"Copilot is working"** appears
+1. **Labels**: `enhancement`
+2. **Assignees**: `copilot`
+3. Submit → verify **"Copilot is working"** appears
 
 #### Option: Add Health Endpoints (Go — Medium)
 
@@ -446,9 +445,9 @@ The makeline-service (`src/makeline-service/`) needs Kubernetes health check end
 - `src/makeline-service/README.md`
 ```
 
-4. **Labels**: `enhancement`
-5. **Assignees**: `copilot`
-6. Submit → verify **"Copilot is working"** appears
+1. **Labels**: `enhancement`
+2. **Assignees**: `copilot`
+3. Submit → verify **"Copilot is working"** appears
 
 ### Step 5c: Use Copilot Code Review
 
@@ -601,8 +600,8 @@ Scan:
 - Root `aks-store-*.yaml` files (Kubernetes deployment manifests)
 ```
 
-4. **Assignees**: `copilot`
-5. Submit
+1. **Assignees**: `copilot`
+2. Submit
 
 ### Verify
 
@@ -712,11 +711,11 @@ git push
 
 Ensure the `COPILOT_GITHUB_TOKEN` secret is set (from Setup — it uses the same PAT as `PAT_TOKEN`).
 
-| Engine                    | Secret name            | Where to get it                |
-| ------------------------- | ---------------------- | ------------------------------ |
-| **Copilot** (recommended) | `COPILOT_GITHUB_TOKEN` | Same PAT you created in Setup  |
-| Claude                    | `ANTHROPIC_API_KEY`    | https://console.anthropic.com/ |
-| Codex                     | `OPENAI_API_KEY`       | https://platform.openai.com/   |
+| Engine                    | Secret name            | Where to get it                  |
+| ------------------------- | ---------------------- | -------------------------------- |
+| **Copilot** (recommended) | `COPILOT_GITHUB_TOKEN` | Same PAT you created in Setup    |
+| Claude                    | `ANTHROPIC_API_KEY`    | <https://console.anthropic.com/> |
+| Codex                     | `OPENAI_API_KEY`       | <https://platform.openai.com/>   |
 
 ### Trigger the workflow
 
